@@ -1,6 +1,6 @@
 {
   "name": "erela-spotify-kclient",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Spotify plugin for Erela.JS",
   "main": "dist/index.js",
   "files": [
