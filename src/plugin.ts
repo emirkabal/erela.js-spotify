@@ -9,7 +9,7 @@ import {
 } from "erela.js";
 import Axios from "axios";
 
-const BASE_URL = "https://api.spotify.com/v1";
+const BASE_URL = "https://kapi.emirkabal.com/v1/spotify";
 const REGEX = /(?:https:\/\/open\.spotify\.com\/|spotify:)(?:.+)?(track|playlist|album)[\/:]([A-Za-z0-9]+)/;
 
 const buildSearch = (loadType: LoadType, tracks: UnresolvedTrack[], error: string, name: string): SearchResult => ({
@@ -32,14 +32,9 @@ const buildSearch = (loadType: LoadType, tracks: UnresolvedTrack[], error: strin
 const check = (options: SpotifyOptions) => {
     if (!options) throw new TypeError("SpotifyOptions must not be empty.");
 
-    if (typeof options.clientID !== "string" || !/^.+$/.test(options.clientID))
+    if (typeof options.token !== "string" || !/^.+$/.test(options.token))
         throw new TypeError(
-            'Spotify option "clientID" must be present and be a non-empty string.'
-        );
-
-    if (typeof options.clientSecret !== "string" || !/^.+$/.test(options.clientSecret))
-        throw new TypeError(
-            'Spotify option "clientSecret" must be a non-empty string.'
+            'Spotify option "token" must be present and be a non-empty string.'
         );
 
     if (
@@ -79,14 +74,10 @@ export class Spotify extends Plugin {
             ...options
         }
 
-        this.token = "";
-        this.authorization = Buffer.from(
-            `${this.options.clientID}:${this.options.clientSecret}`
-        ).toString("base64");
         this.axiosOptions = {
             headers: {
                 "Content-Type": "application/json",
-                Authorization: this.token
+                Authorization: this.options.token
             }
         };
 
@@ -96,7 +87,6 @@ export class Spotify extends Plugin {
             playlist: this.getPlaylistTracks.bind(this),
         };
 
-        this.renew();
     }
 
     public load(manager: Manager) {
@@ -196,34 +186,10 @@ export class Spotify extends Plugin {
         }
     }
 
-    private async renewToken(): Promise<number> {
-        const { data: { access_token, expires_in } } = await Axios.post(
-            "https://accounts.spotify.com/api/token",
-            "grant_type=client_credentials",
-            {
-                headers: {
-                    Authorization: `Basic ${this.authorization}`,
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
-            }
-        );
-
-        if (!access_token) throw new Error("Invalid Spotify client.");
-
-        this.token = `Bearer ${access_token}`;
-        this.axiosOptions.headers.Authorization = this.token;
-
-        return expires_in * 1000;
-    }
-
-    private async renew(): Promise<void> {
-        setTimeout(this.renew.bind(this), await this.renewToken());
-    }
 }
 
 export interface SpotifyOptions {
-    clientID: string;
-    clientSecret: string;
+    token: string;
     /** Amount of pages to load, each page having 100 tracks. */
     playlistLimit?: number
     /** Amount of pages to load, each page having 50 tracks. */
